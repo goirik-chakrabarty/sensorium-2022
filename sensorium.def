@@ -1,0 +1,30 @@
+Bootstrap: docker
+From: sinzlab/pytorch:v3.8-torch1.7.0-cuda11.0-dj0.12.7
+
+%labels
+    Maintainer Goirik
+    Version v1.2
+
+%environment
+    export JUPYTER_TOKEN="sensoriumtoken"
+    export JUPYTER_PASSWORD=""
+
+%post
+    apt-get update && apt-get install -y python3-pip
+    python3.8 -m pip install --upgrade pip
+    python3.8 -m pip install --no-cache-dir hub
+    python3.8 -m pip install debugpy
+    mkdir -p /project /notebooks
+    cp -r /src/* /project/
+    python3.8 -m pip install -e /project
+
+%files
+    . /src
+
+%runscript
+    cd /notebooks
+    exec jupyter lab \
+        --ip=0.0.0.0 \
+        --allow-root \
+        --NotebookApp.token="${JUPYTER_TOKEN}" \
+        --NotebookApp.password="${JUPYTER_PASSWORD}"
