@@ -170,7 +170,7 @@ def standard_trainer(
             model(args[0].to(device), data_key=data_key, **kwargs),
             args[1].to(device),
         )
-        if False:
+        if False:  # Superloss is not being used
             loss = superloss(loss)
         regularizers = int(
             not detach_core

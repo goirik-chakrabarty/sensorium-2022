@@ -16,4 +16,4 @@ apptainer exec \
  --bind "$PROJECT_ROOT:/project" \
  --bind "$PROJECT_ROOT/notebooks:/notebooks" \
  "$SIF_IMAGE" \
- bash apptainer-runners/run_jupyter.sh
+ bash apptainer-runners/run_debugger.sh
