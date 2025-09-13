@@ -1,4 +1,5 @@
 import math
+import os
 import warnings
 from functools import partial
 
@@ -53,6 +54,10 @@ class PoissonLoss(nn.Module):
             log_input=False, full=self.full_loss, eps=self.bias, reduction="none"
         )(rate, target)
         wandb.log({"poisson_loss": loss.sum().item()})
+
+        save_dir = "./metrics_save/loss/"
+        os.makedirs(save_dir, exist_ok=True)
+
         np.save(f"./metrics_save/loss/{ITER}", loss.sum(dim=0).cpu().detach().numpy())
 
         # if True:# self.elementwise:
@@ -70,20 +75,16 @@ class PoissonLoss(nn.Module):
 
 class SuperLoss(nn.Module):
 
-    def __init__(self, loss_fn=None, C=10, lam=0.1):  # lam = [0.1, 1, 10] # SWEEP
+    def __init__(self, loss_fn=None, C=10, lam=0.1):
         super(SuperLoss, self).__init__()
-        # self.tau = math.log(C)
-        self.lam = lam  # set to 1 for CIFAR10 and 0.25 for CIFAR100
-        # self.loss_fn = loss_fn
+        self.lam = lam
         self.counter = 0
         self.tau = 0
 
     def forward(self, loss):
         self.counter += 1
-        l_i = loss.detach()  # reduction='none' has been removed
-        self.tau = (
-            self.tau * (self.counter - 1) + l_i.mean()
-        ) / self.counter  # update tau with the mean of l_i
+        l_i = loss.detach()
+        self.tau = (self.tau * (self.counter - 1) + l_i.mean()) / self.counter
         sigma = self.sigma(l_i)
         loss = (loss - self.tau) * sigma + self.lam * (torch.log(sigma) ** 2)
         return loss
@@ -125,59 +126,44 @@ def standard_trainer(
     cb=None,
     track_training=False,
     detach_core=False,
+    loss_weighting_power=None,  # --- ADDED: New argument for reweighting
     **kwargs,
 ):
     """
 
     Args:
         model: model to be trained
-        dataloaders: dataloaders containing the data to train the model with
-        seed: random seed
-        avg_loss: whether to average (or sum) the loss over a batch
-        scale_loss: whether to scale the loss according to the size of the dataset
-        loss_function: loss function to use
-        stop_function: the function (metric) that is used to determine the end of the training in early stopping
-        loss_accum_batch_n: number of batches to accumulate the loss over
-        device: device to run the training on
-        verbose: whether to print out a message for each optimizer step
-        interval: interval at which objective is evaluated to consider early stopping
-        patience: number of times the objective is allowed to not become better before the iterator terminates
-        epoch: starting epoch
-        lr_init: initial learning rate
-        max_iter: maximum number of training iterations
-        maximize: whether to maximize or minimize the objective function
-        tolerance: tolerance for early stopping
-        restore_best: whether to restore the model to the best state after early stopping
-        lr_decay_steps: how many times to decay the learning rate after no improvement
-        lr_decay_factor: factor to decay the learning rate with
-        min_lr: minimum learning rate
-        cb: whether to execute callback function
-        track_training: whether to track and print out the training progress
-        **kwargs:
-
-    Returns:
-
+        ...
+        loss_weighting_power: The power to which the response magnitudes are raised for weighting.
+        ...
     """
 
     def full_objective(model, dataloader, data_key, *args, **kwargs):
-        superloss = SuperLoss()
         loss_scale = (
             np.sqrt(len(dataloader[data_key].dataset) / args[0].shape[0])
             if scale_loss
             else 1.0
         )
-        loss = loss_scale * criterion(
+        # --- MODIFIED: Loss calculation to include reweighting ---
+        unweighted_loss = criterion(
             model(args[0].to(device), data_key=data_key, **kwargs),
             args[1].to(device),
         )
-        if False:  # Superloss is not being used
-            loss = superloss(loss)
+
+        if loss_weighting_power is not None and loss_weighting_power > 0:
+            responses = args[1].to(device).detach()
+            weights = (responses + 1e-8) ** loss_weighting_power
+            loss = unweighted_loss * weights
+        else:
+            loss = unweighted_loss
+
         regularizers = int(
             not detach_core
         ) * model.core.regularizer() + model.readout.regularizer(data_key)
-        loss = loss.sum() + regularizers  # This can be sum or mean # SWEEP
-        wandb.log({"loss": loss.item()})
-        return loss
+
+        final_loss = (loss_scale * loss).sum() + regularizers
+        wandb.log({"loss": final_loss.item()})
+        return final_loss
 
     wandb.init(
         project="curriculum-learning",
@@ -201,6 +187,7 @@ def standard_trainer(
             "lr_decay_steps": lr_decay_steps,
             "lr_decay_factor": lr_decay_factor,
             "min_lr": min_lr,
+            "loss_weighting_power": loss_weighting_power,
         },
         mode="online" if use_wandb else "disabled",
     )
@@ -294,7 +281,18 @@ def standard_trainer(
             as_dict=False,
             per_neuron=True,
         )
-        np.save(f"./metrics_save/corr/{epoch}.npy", validation_correlation)
+        save_dir = "./metrics_save/corr"
+        save_path = os.path.join(save_dir, f"{epoch}.npy")
+
+        os.makedirs(save_dir, exist_ok=True)
+
+        if os.path.exists(save_path):
+            print(f"Warning: {save_path} already exists and will be overwritten.")
+
+        # Save file
+        np.save(save_path, validation_correlation)
+        print(f"Saved validation_correlation to {save_path}")
+
         # return the whole tracker output as a dict
         output = {k: v for k, v in tracker.log.items()} if track_training else {}
         output["validation_corr"] = validation_correlation
