@@ -59,6 +59,7 @@ trainer_config = {'max_iter': 120,
                  'lr_decay_steps': 4,
                  'avg_loss': False,
                  'lr_init': 0.009,
+                 'use_wandb': True,
                  }
 
 trainer = get_trainer(trainer_fn=trainer_fn, 
