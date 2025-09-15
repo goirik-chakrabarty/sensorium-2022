@@ -152,7 +152,12 @@ def standard_trainer(
 
         if loss_weighting_power is not None and loss_weighting_power > 0:
             responses = args[1].to(device).detach()
+            # Calculate raw weights
             weights = (responses + 1e-8) ** loss_weighting_power
+
+            # This keeps the total loss magnitude similar to the unweighted case on average.
+            weights = weights / (weights.mean() + 1e-8)
+
             loss = unweighted_loss * weights
         else:
             loss = unweighted_loss

@@ -69,7 +69,7 @@ trainer_config = {
     "avg_loss": False,
     "lr_init": 0.009,
     "use_wandb": True,
-    "loss_weighting_power": 1.0,
+    "loss_weighting_power": 10.0,
 }
 
 trainer = get_trainer(trainer_fn=trainer_fn, trainer_config=trainer_config)
