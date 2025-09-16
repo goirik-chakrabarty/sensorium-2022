@@ -68,8 +68,12 @@ trainer_config = {
     "lr_decay_steps": 4,
     "avg_loss": False,
     "lr_init": 0.009,
-    "use_wandb": True,
-    "loss_weighting_power": 10.0,
+    "use_wandb": False,
+    "use_tqdm": False,
+    "loss_weighting_power": 0,
+    # "use_performance_tail_weighting": True,
+    # "gamma_fits": np.load("gamma_fits.npy"),
+    # "tail_quantile": 0.75,
 }
 
 trainer = get_trainer(trainer_fn=trainer_fn, trainer_config=trainer_config)

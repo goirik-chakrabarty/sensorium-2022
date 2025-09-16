@@ -14,6 +14,7 @@ from neuralpredictors.training import (
 )
 from nnfabrik.utility.nn_helpers import set_random_seed
 from scipy.special import lambertw
+from scipy.stats import gamma as gamma_dist
 from torch import nn
 from tqdm import tqdm
 
@@ -105,6 +106,7 @@ def standard_trainer(
     dataloaders,
     seed,
     use_wandb=True,
+    use_tqdm=True,
     avg_loss=False,
     scale_loss=False,
     loss_function="PoissonLoss",
@@ -126,7 +128,10 @@ def standard_trainer(
     cb=None,
     track_training=False,
     detach_core=False,
-    loss_weighting_power=None,  # --- ADDED: New argument for reweighting
+    loss_weighting_power=None,
+    use_performance_tail_weighting=False,  # --- ADDED: Flag to enable tail reweighting
+    gamma_fits=None,  # --- ADDED: Gamma parameters for each neuron
+    tail_quantile=0.95,  # --- ADDED: Quantile to define the tail
     **kwargs,
 ):
     """
@@ -134,33 +139,116 @@ def standard_trainer(
     Args:
         model: model to be trained
         ...
-        loss_weighting_power: The power to which the response magnitudes are raised for weighting.
+        use_performance_tail_weighting: If True, enables the performance-based tail reweighting.
+        gamma_fits: A NumPy array of shape (n_neurons, 2) with alpha and beta parameters for the Gamma fit of each neuron.
+        tail_quantile: The quantile (0 to 1) above which a response is considered to be in the tail.
         ...
     """
 
+    # --- CORRECTED: Initialize neuron_performance safely ---
+    if use_performance_tail_weighting:
+        if gamma_fits is None:
+            raise ValueError(
+                "gamma_fits must be provided when use_performance_tail_weighting is True."
+            )
+        n_neurons = gamma_fits.shape[0]
+        neuron_performance = torch.ones(n_neurons, device=device, dtype=torch.float32)
+    else:
+        neuron_performance = None
+
     def full_objective(model, dataloader, data_key, *args, **kwargs):
+        nonlocal neuron_performance  # --- Allow modification of the outer scope variable
         loss_scale = (
             np.sqrt(len(dataloader[data_key].dataset) / args[0].shape[0])
             if scale_loss
             else 1.0
         )
-        # --- MODIFIED: Loss calculation to include reweighting ---
         unweighted_loss = criterion(
             model(args[0].to(device), data_key=data_key, **kwargs),
             args[1].to(device),
         )
 
-        if loss_weighting_power is not None and loss_weighting_power > 0:
-            responses = args[1].to(device).detach()
-            # Calculate raw weights
+        responses = args[1].to(device).detach()
+
+        if use_performance_tail_weighting:
+            if gamma_fits is None:
+                raise ValueError(
+                    "gamma_fits must be provided when use_performance_tail_weighting is True."
+                )
+
+            with torch.no_grad():
+                # --- Calculate tail thresholds using the Gamma distribution ---
+                alphas = torch.tensor(
+                    gamma_fits[:, 0], device=device, dtype=torch.float32
+                )
+                betas = torch.tensor(
+                    gamma_fits[:, 1], device=device, dtype=torch.float32
+                )
+
+                # Using scipy's ppf function for the inverse CDF
+                tail_thresholds = torch.tensor(
+                    gamma_dist.ppf(
+                        tail_quantile,
+                        a=alphas.cpu().numpy(),
+                        scale=1 / betas.cpu().numpy(),
+                    ),
+                    device=device,
+                    dtype=torch.float32,
+                )
+
+                # --- Define tails and performance weights ---
+                is_in_tail = responses > tail_thresholds
+                performance_weights = 1.0 / (neuron_performance + 1e-8)
+                # print(neuron_performance.min().item(), neuron_performance.max().item())
+                # print(
+                #     performance_weights.cpu().numpy().min(),
+                #     performance_weights.cpu().numpy().max(),
+                # )
+                # print(
+                #     performance_weights.cpu().numpy().argmin(),
+                #     performance_weights.cpu().numpy().argmax(),
+                # )
+                # global ITER
+                # if ITER % 35 == 1:
+                #     arr = neuron_performance.cpu().numpy()
+                #     ind = np.argpartition(arr, -5)[-5:]
+                #     ind = ind[np.argsort(arr[ind])]
+                #     rev_ind = np.argpartition(arr, 5)[:5]
+                #     rev_ind = rev_ind[np.argsort(arr[rev_ind])]
+                #     print(rev_ind, "|", ind)
+                #     print(np.around(arr[rev_ind], 2), "|", np.around(arr[ind], 2))
+                #     print(f"Average correlation epoch {ITER//35} : {arr.mean()}")
+                #     print(f"Average correlation epoch {ITER//35} : {arr[6151]}")
+                #     print(f"Average correlation epoch {ITER//35} : {arr[6477]}")
+
+                # --- Create and normalize weights ---
+                weights = torch.ones_like(responses)
+                weights[is_in_tail] = performance_weights.expand_as(responses)[
+                    is_in_tail
+                ]
+                weights = weights / (weights.mean() + 1e-8)
+
+            loss = unweighted_loss * weights
+
+        elif loss_weighting_power is not None and loss_weighting_power > 0:
             weights = (responses + 1e-8) ** loss_weighting_power
-
-            # This keeps the total loss magnitude similar to the unweighted case on average.
             weights = weights / (weights.mean() + 1e-8)
-
             loss = unweighted_loss * weights
         else:
             loss = unweighted_loss
+
+        global ITER
+        if ITER % 35 == 1 and not use_tqdm:
+            arr = neuron_performance.cpu().numpy()
+            ind = np.argpartition(arr, -5)[-5:]
+            ind = ind[np.argsort(arr[ind])]
+            rev_ind = np.argpartition(arr, 5)[:5]
+            rev_ind = rev_ind[np.argsort(arr[rev_ind])]
+            print(rev_ind, "|", ind)
+            print(np.around(arr[rev_ind], 2), "|", np.around(arr[ind], 2))
+            print(f"Average correlation epoch {ITER//35} : {arr.mean()}")
+            print(f"Average correlation epoch {ITER//35} : {arr[6151]}")
+            print(f"Average correlation epoch {ITER//35} : {arr[6477]}")
 
         regularizers = int(
             not detach_core
@@ -193,6 +281,8 @@ def standard_trainer(
             "lr_decay_factor": lr_decay_factor,
             "min_lr": min_lr,
             "loss_weighting_power": loss_weighting_power,
+            "use_performance_tail_weighting": use_performance_tail_weighting,
+            "tail_quantile": tail_quantile,
         },
         mode="online" if use_wandb else "disabled",
     )
@@ -202,7 +292,6 @@ def standard_trainer(
     set_random_seed(seed)
     model.train()
 
-    # criterion = getattr(modules, loss_function)(avg=avg_loss)
     criterion = PoissonLoss(avg=avg_loss)
     stop_closure = partial(
         getattr(scores, stop_function),
@@ -213,7 +302,6 @@ def standard_trainer(
     )
 
     n_iterations = len(LongCycler(dataloaders["train"]))
-
     optimizer = torch.optim.Adam(model.parameters(), lr=lr_init)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
@@ -226,7 +314,6 @@ def standard_trainer(
         threshold_mode="abs",
     )
 
-    # set the number of iterations over which you would like to accummulate gradients
     optim_step_count = (
         len(dataloaders["train"].keys())
         if loss_accum_batch_n is None
@@ -278,7 +365,6 @@ def standard_trainer(
         model.eval()
         tracker.finalize() if track_training else None
 
-        # Compute avg validation and test correlation
         validation_correlation = get_correlations(
             model,
             dataloaders["validation"],
@@ -286,11 +372,14 @@ def standard_trainer(
             as_dict=False,
             per_neuron=True,
         )
+        # --- ADDED: Update neuron_performance for the next epoch's weighting ---
+        neuron_performance = torch.tensor(
+            validation_correlation, device=device, dtype=torch.float32
+        )
+
         save_dir = "./metrics_save/corr"
         save_path = os.path.join(save_dir, f"{epoch}.npy")
-
         os.makedirs(save_dir, exist_ok=True)
-
         if os.path.exists(save_path):
             print(f"Warning: {save_path} already exists and will be overwritten.")
 
@@ -304,29 +393,25 @@ def standard_trainer(
 
         score = np.mean(validation_correlation)
         score_list.append(score)
-
         wandb.log({"per_epoch_validation_correlation": score})
 
         ########################### Model training ################################################
         model.train()
-        # print the quantities from tracker
         if verbose and tracker is not None:
             print("=======================================")
             for key in tracker.log.keys():
                 print(key, tracker.log[key][-1], flush=True)
 
-        # executes callback function if passed in keyword args
         if cb is not None:
             cb()
 
-        # train over batches
         optimizer.zero_grad()
         for batch_no, (data_key, data) in tqdm(
             enumerate(LongCycler(dataloaders["train"])),
             total=n_iterations,
             desc="Epoch {}".format(epoch),
+            disable=not (use_tqdm),
         ):
-
             batch_args = list(data)
             batch_kwargs = data._asdict() if not isinstance(data, dict) else data
             loss = full_objective(
