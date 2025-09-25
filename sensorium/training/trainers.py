@@ -198,28 +198,16 @@ def standard_trainer(
 
                 # --- Define tails and performance weights ---
                 is_in_tail = responses > tail_thresholds
-                performance_weights = 1.0 / (neuron_performance + 1e-8)
-                # print(neuron_performance.min().item(), neuron_performance.max().item())
-                # print(
-                #     performance_weights.cpu().numpy().min(),
-                #     performance_weights.cpu().numpy().max(),
-                # )
-                # print(
-                #     performance_weights.cpu().numpy().argmin(),
-                #     performance_weights.cpu().numpy().argmax(),
-                # )
-                # global ITER
-                # if ITER % 35 == 1:
-                #     arr = neuron_performance.cpu().numpy()
-                #     ind = np.argpartition(arr, -5)[-5:]
-                #     ind = ind[np.argsort(arr[ind])]
-                #     rev_ind = np.argpartition(arr, 5)[:5]
-                #     rev_ind = rev_ind[np.argsort(arr[rev_ind])]
-                #     print(rev_ind, "|", ind)
-                #     print(np.around(arr[rev_ind], 2), "|", np.around(arr[ind], 2))
-                #     print(f"Average correlation epoch {ITER//35} : {arr.mean()}")
-                #     print(f"Average correlation epoch {ITER//35} : {arr[6151]}")
-                #     print(f"Average correlation epoch {ITER//35} : {arr[6477]}")
+                # Define the two possible weighting values
+                weight_if_high_performance = 1.0 / (neuron_performance + 1e-8)
+                weight_if_low_performance = torch.full_like(neuron_performance, 1000.0)
+
+                # Use torch.where to choose between the two weight tensors based on the condition
+                performance_weights = torch.where(
+                    neuron_performance >= 0.001,
+                    weight_if_high_performance,
+                    weight_if_low_performance,
+                )
 
                 # --- Create and normalize weights ---
                 weights = torch.ones_like(responses)
@@ -230,25 +218,32 @@ def standard_trainer(
 
             loss = unweighted_loss * weights
 
+            global ITER
+            if ITER % 35 == 1 and not use_tqdm:
+                arr = neuron_performance.cpu().numpy()
+                ind = np.argpartition(arr, -5)[-5:]
+                ind = ind[np.argsort(arr[ind])]
+                rev_ind = np.argpartition(arr, 5)[:5]
+                rev_ind = rev_ind[np.argsort(arr[rev_ind])]
+                print(rev_ind, "|", ind)
+                print(np.around(arr[rev_ind], 2), "|", np.around(arr[ind], 2))
+                print(
+                    np.around(performance_weights[rev_ind].cpu().numpy(), 2),
+                    "|",
+                    np.around(performance_weights[ind].cpu().numpy(), 2),
+                )
+                print(f"Average correlation epoch {ITER//35} : {arr.mean()}")
+                print(f"Average correlation epoch {ITER//35} : {arr[6477]}")
+                # print(f"Average correlation epoch {ITER//35} : {arr[6059]}")
+                # print(f"Average correlation epoch {ITER//35} : {arr[6146]}")
+                print(f"Average correlation epoch {ITER//35} : {arr[6151]}")
+
         elif loss_weighting_power is not None and loss_weighting_power > 0:
             weights = (responses + 1e-8) ** loss_weighting_power
             weights = weights / (weights.mean() + 1e-8)
             loss = unweighted_loss * weights
         else:
             loss = unweighted_loss
-
-        global ITER
-        if ITER % 35 == 1 and not use_tqdm:
-            arr = neuron_performance.cpu().numpy()
-            ind = np.argpartition(arr, -5)[-5:]
-            ind = ind[np.argsort(arr[ind])]
-            rev_ind = np.argpartition(arr, 5)[:5]
-            rev_ind = rev_ind[np.argsort(arr[rev_ind])]
-            print(rev_ind, "|", ind)
-            print(np.around(arr[rev_ind], 2), "|", np.around(arr[ind], 2))
-            print(f"Average correlation epoch {ITER//35} : {arr.mean()}")
-            print(f"Average correlation epoch {ITER//35} : {arr[6151]}")
-            print(f"Average correlation epoch {ITER//35} : {arr[6477]}")
 
         regularizers = int(
             not detach_core
