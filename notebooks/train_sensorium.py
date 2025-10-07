@@ -1,3 +1,4 @@
+import os
 import warnings
 
 import matplotlib.pyplot as plt
@@ -14,6 +15,12 @@ from nnfabrik.builder import get_data, get_model, get_trainer
 filenames = [
     "data/static26872-17-20-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip",
 ]
+
+# basepath = "./data/"
+# filenames = [
+#     os.path.join(basepath, file) for file in os.listdir(basepath) if ".zip" in file
+# ]
+
 
 dataset_fn = "sensorium.datasets.static_loaders"
 dataset_config = {
@@ -63,17 +70,21 @@ model = get_model(
 trainer_fn = "sensorium.training.standard_trainer"
 
 trainer_config = {
-    "max_iter": 120,
+    "max_iter": 200,
     "verbose": False,
     "lr_decay_steps": 4,
     "avg_loss": False,
     "lr_init": 0.009,
-    "use_wandb": False,
+    "use_wandb": True,
     "use_tqdm": True,
     "loss_weighting_power": 0,
     "use_performance_tail_weighting": False,
     "gamma_fits": np.load("gamma_fits.npy"),
     "tail_quantile": 0.1,
+    "use_mixup": False,
+    "mixup_alpha": 0.4,
+    "use_cutmix": True,
+    "cutmix_alpha": 2,
 }
 
 trainer = get_trainer(trainer_fn=trainer_fn, trainer_config=trainer_config)

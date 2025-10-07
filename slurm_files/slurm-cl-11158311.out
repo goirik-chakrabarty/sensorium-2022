@@ -1,0 +1,337 @@
+================================================================================
+JobID = 11158311
+User = u13071, Account = agsinz_foundation_model_brain
+Partition = grete:interactive, Nodelist = ggpu137
+================================================================================
+Submitting job with sbatch from directory: /mnt/vast-react/projects/agsinz_foundation_model_brain/goirik/curriculum-learning/sensorium-2022
+Home directory: /user/chakrabarty1/u13071
+Working directory: /mnt/vast-react/projects/agsinz_foundation_model_brain/goirik/curriculum-learning/sensorium-2022
+Current node: ggpu137
+Python 3.10.14
+Collecting environment information...
+PyTorch version: 2.7.0+cu126
+Is debug build: False
+CUDA used to build PyTorch: 12.6
+ROCM used to build PyTorch: N/A
+
+OS: Rocky Linux 8.10 (Green Obsidian) (x86_64)
+GCC version: (GCC) 8.5.0 20210514 (Red Hat 8.5.0-28)
+Clang version: Could not collect
+CMake version: version 3.26.5
+Libc version: glibc-2.28
+
+Python version: 3.10.14 | packaged by conda-forge | (main, Mar 20 2024, 12:45:18) [GCC 12.3.0] (64-bit runtime)
+Python platform: Linux-4.18.0-553.74.1.el8_10.x86_64-x86_64-with-glibc2.28
+Is CUDA available: True
+CUDA runtime version: Could not collect
+CUDA_MODULE_LOADING set to: LAZY
+GPU models and configuration: 
+GPU 0: NVIDIA A100-SXM4-80GB
+  MIG 1g.20gb     Device  0:
+
+Nvidia driver version: 550.163.01
+cuDNN version: Could not collect
+HIP runtime version: N/A
+MIOpen runtime version: N/A
+Is XNNPACK available: True
+
+CPU:
+Architecture:        x86_64
+CPU op-mode(s):      32-bit, 64-bit
+Byte Order:          Little Endian
+CPU(s):              128
+On-line CPU(s) list: 0-127
+Thread(s) per core:  2
+Core(s) per socket:  32
+Socket(s):           2
+NUMA node(s):        2
+Vendor ID:           AuthenticAMD
+CPU family:          25
+Model:               1
+Model name:          AMD EPYC 7513 32-Core Processor
+Stepping:            1
+CPU MHz:             2600.000
+CPU max MHz:         3681.6399
+CPU min MHz:         1500.0000
+BogoMIPS:            5200.22
+Virtualization:      AMD-V
+L1d cache:           32K
+L1i cache:           32K
+L2 cache:            512K
+L3 cache:            32768K
+NUMA node0 CPU(s):   0-31,64-95
+NUMA node1 CPU(s):   32-63,96-127
+Flags:               fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc cpuid extd_apicid aperfmperf pni pclmulqdq monitor ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpb cat_l3 cdp_l3 invpcid_single hw_pstate ssbd mba ibrs ibpb stibp vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local clzero irperf xsaveerptr wbnoinvd amd_ppin brs arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload vgif v_spec_ctrl umip pku ospke vaes vpclmulqdq rdpid overflow_recov succor smca fsrm
+
+Versions of relevant libraries:
+[pip3] numpy==2.2.5
+[pip3] nvidia-cublas-cu12==12.6.4.1
+[pip3] nvidia-cuda-cupti-cu12==12.6.80
+[pip3] nvidia-cuda-nvrtc-cu12==12.6.77
+[pip3] nvidia-cuda-runtime-cu12==12.6.77
+[pip3] nvidia-cudnn-cu12==9.5.1.17
+[pip3] nvidia-cufft-cu12==11.3.0.4
+[pip3] nvidia-curand-cu12==10.3.7.77
+[pip3] nvidia-cusolver-cu12==11.7.1.2
+[pip3] nvidia-cusparse-cu12==12.5.4.2
+[pip3] nvidia-cusparselt-cu12==0.6.3
+[pip3] nvidia-nccl-cu12==2.26.2
+[pip3] nvidia-nvjitlink-cu12==12.6.85
+[pip3] nvidia-nvtx-cu12==12.6.77
+[pip3] torch==2.7.0
+[pip3] torchvision==0.22.0
+[pip3] triton==3.3.0
+[conda] No relevant packages
+Waiting for debugger to attach on port 5678...
+Warning: ./metrics_save/corr/0.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/0.npy
+Warning: ./metrics_save/corr/1.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/1.npy
+Warning: ./metrics_save/corr/2.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/2.npy
+Warning: ./metrics_save/corr/3.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/3.npy
+Warning: ./metrics_save/corr/4.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/4.npy
+Warning: ./metrics_save/corr/5.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/5.npy
+Warning: ./metrics_save/corr/6.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/6.npy
+Warning: ./metrics_save/corr/7.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/7.npy
+Warning: ./metrics_save/corr/8.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/8.npy
+Warning: ./metrics_save/corr/9.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/9.npy
+Warning: ./metrics_save/corr/10.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/10.npy
+Warning: ./metrics_save/corr/11.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/11.npy
+Warning: ./metrics_save/corr/12.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/12.npy
+Warning: ./metrics_save/corr/13.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/13.npy
+Warning: ./metrics_save/corr/14.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/14.npy
+Warning: ./metrics_save/corr/15.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/15.npy
+Warning: ./metrics_save/corr/16.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/16.npy
+Warning: ./metrics_save/corr/17.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/17.npy
+Warning: ./metrics_save/corr/18.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/18.npy
+Warning: ./metrics_save/corr/19.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/19.npy
+Warning: ./metrics_save/corr/20.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/20.npy
+Warning: ./metrics_save/corr/21.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/21.npy
+Warning: ./metrics_save/corr/22.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/22.npy
+Warning: ./metrics_save/corr/23.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/23.npy
+Warning: ./metrics_save/corr/24.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/24.npy
+Warning: ./metrics_save/corr/25.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/25.npy
+Warning: ./metrics_save/corr/26.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/26.npy
+Warning: ./metrics_save/corr/27.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/27.npy
+Warning: ./metrics_save/corr/28.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/28.npy
+Warning: ./metrics_save/corr/29.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/29.npy
+Warning: ./metrics_save/corr/30.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/30.npy
+Warning: ./metrics_save/corr/31.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/31.npy
+Warning: ./metrics_save/corr/32.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/32.npy
+Warning: ./metrics_save/corr/33.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/33.npy
+Warning: ./metrics_save/corr/34.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/34.npy
+Warning: ./metrics_save/corr/35.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/35.npy
+Warning: ./metrics_save/corr/36.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/36.npy
+Warning: ./metrics_save/corr/37.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/37.npy
+Warning: ./metrics_save/corr/38.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/38.npy
+Warning: ./metrics_save/corr/39.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/39.npy
+Warning: ./metrics_save/corr/40.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/40.npy
+Warning: ./metrics_save/corr/41.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/41.npy
+Warning: ./metrics_save/corr/42.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/42.npy
+Warning: ./metrics_save/corr/43.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/43.npy
+Warning: ./metrics_save/corr/44.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/44.npy
+Warning: ./metrics_save/corr/45.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/45.npy
+Warning: ./metrics_save/corr/46.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/46.npy
+Warning: ./metrics_save/corr/47.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/47.npy
+Warning: ./metrics_save/corr/48.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/48.npy
+Warning: ./metrics_save/corr/49.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/49.npy
+Warning: ./metrics_save/corr/50.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/50.npy
+Warning: ./metrics_save/corr/51.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/51.npy
+Warning: ./metrics_save/corr/52.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/52.npy
+Warning: ./metrics_save/corr/53.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/53.npy
+Warning: ./metrics_save/corr/54.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/54.npy
+Warning: ./metrics_save/corr/55.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/55.npy
+Warning: ./metrics_save/corr/56.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/56.npy
+Warning: ./metrics_save/corr/57.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/57.npy
+Warning: ./metrics_save/corr/58.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/58.npy
+Warning: ./metrics_save/corr/59.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/59.npy
+Warning: ./metrics_save/corr/60.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/60.npy
+Warning: ./metrics_save/corr/61.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/61.npy
+Warning: ./metrics_save/corr/62.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/62.npy
+Warning: ./metrics_save/corr/63.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/63.npy
+Warning: ./metrics_save/corr/64.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/64.npy
+Warning: ./metrics_save/corr/65.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/65.npy
+Warning: ./metrics_save/corr/66.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/66.npy
+Warning: ./metrics_save/corr/67.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/67.npy
+Warning: ./metrics_save/corr/68.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/68.npy
+Warning: ./metrics_save/corr/69.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/69.npy
+Warning: ./metrics_save/corr/70.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/70.npy
+Warning: ./metrics_save/corr/71.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/71.npy
+Warning: ./metrics_save/corr/72.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/72.npy
+Warning: ./metrics_save/corr/73.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/73.npy
+Warning: ./metrics_save/corr/74.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/74.npy
+Warning: ./metrics_save/corr/75.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/75.npy
+Warning: ./metrics_save/corr/76.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/76.npy
+Warning: ./metrics_save/corr/77.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/77.npy
+Warning: ./metrics_save/corr/78.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/78.npy
+Warning: ./metrics_save/corr/79.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/79.npy
+Warning: ./metrics_save/corr/80.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/80.npy
+Warning: ./metrics_save/corr/81.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/81.npy
+Warning: ./metrics_save/corr/82.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/82.npy
+Warning: ./metrics_save/corr/83.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/83.npy
+Warning: ./metrics_save/corr/84.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/84.npy
+Warning: ./metrics_save/corr/85.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/85.npy
+Warning: ./metrics_save/corr/86.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/86.npy
+Warning: ./metrics_save/corr/87.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/87.npy
+Warning: ./metrics_save/corr/88.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/88.npy
+Warning: ./metrics_save/corr/89.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/89.npy
+Warning: ./metrics_save/corr/90.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/90.npy
+Warning: ./metrics_save/corr/91.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/91.npy
+Warning: ./metrics_save/corr/92.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/92.npy
+Warning: ./metrics_save/corr/93.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/93.npy
+Warning: ./metrics_save/corr/94.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/94.npy
+Warning: ./metrics_save/corr/95.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/95.npy
+Warning: ./metrics_save/corr/96.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/96.npy
+Warning: ./metrics_save/corr/97.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/97.npy
+Warning: ./metrics_save/corr/98.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/98.npy
+Warning: ./metrics_save/corr/99.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/99.npy
+Warning: ./metrics_save/corr/100.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/100.npy
+Warning: ./metrics_save/corr/101.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/101.npy
+Warning: ./metrics_save/corr/102.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/102.npy
+Warning: ./metrics_save/corr/103.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/103.npy
+Warning: ./metrics_save/corr/104.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/104.npy
+Warning: ./metrics_save/corr/105.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/105.npy
+Warning: ./metrics_save/corr/106.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/106.npy
+Warning: ./metrics_save/corr/107.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/107.npy
+Warning: ./metrics_save/corr/108.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/108.npy
+Warning: ./metrics_save/corr/109.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/109.npy
+Warning: ./metrics_save/corr/110.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/110.npy
+Warning: ./metrics_save/corr/111.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/111.npy
+Warning: ./metrics_save/corr/112.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/112.npy
+Warning: ./metrics_save/corr/113.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/113.npy
+Warning: ./metrics_save/corr/114.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/114.npy
+Warning: ./metrics_save/corr/115.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/115.npy
+Warning: ./metrics_save/corr/116.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/116.npy
+Warning: ./metrics_save/corr/117.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/117.npy
+Warning: ./metrics_save/corr/118.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/118.npy
+Warning: ./metrics_save/corr/119.npy already exists and will be overwritten.
+Saved validation_correlation to ./metrics_save/corr/119.npy
+0.31877866
+[1;34mwandb[0m: 
+[1;34mwandb[0m: 🚀 View run [33mhardy-plasma-23[0m at: [34mhttps://wandb.ai/sinzlab/curriculum-learning/runs/1v115h6l[0m
+[1;34mwandb[0m: Find logs at: [1;35mwandb/run-20250926_165842-1v115h6l/logs[0m
+============ Job Information ===================================================
+Submitted: 2025-09-26T16:57:09
+Started: 2025-09-26T16:57:35
+Ended: 2025-09-26T19:24:00
+Elapsed: 147 min, Limit: 360 min, Difference: 213 min
+CPUs: 4, Nodes: 1
+Estimated Consumption: 115.15 core-hours
+================================================================================

@@ -101,6 +101,45 @@ class SuperLoss(nn.Module):
         return sigma
 
 
+def rand_bbox(size, lam):
+    """Generates a random bounding box for CutMix."""
+    W = size[2]
+    H = size[3]
+    cut_rat = np.sqrt(1.0 - lam)
+    cut_w = int(W * cut_rat)
+    cut_h = int(H * cut_rat)
+
+    # uniform
+    cx = np.random.randint(W)
+    cy = np.random.randint(H)
+
+    bbx1 = np.clip(cx - cut_w // 2, 0, W)
+    bby1 = np.clip(cy - cut_h // 2, 0, H)
+    bbx2 = np.clip(cx + cut_w // 2, 0, W)
+    bby2 = np.clip(cy + cut_h // 2, 0, H)
+
+    return bbx1, bby1, bbx2, bby2
+
+
+def mixup_data(x, y, alpha=0.4, device="cuda"):
+    """Returns mixed inputs, pairs of targets, and lambda"""
+    if alpha > 0:
+        lam = np.random.beta(alpha, alpha)
+    else:
+        lam = 1
+
+    batch_size = x.size()[0]
+    index = torch.randperm(batch_size).to(device)
+
+    mixed_x = lam * x + (1 - lam) * x[index, :]
+    y_a, y_b = y, y[index]
+    return mixed_x, y_a, y_b, lam
+
+
+def mixup_criterion(criterion, pred, y_a, y_b, lam):
+    return lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
+
+
 def standard_trainer(
     model,
     dataloaders,
@@ -129,9 +168,13 @@ def standard_trainer(
     track_training=False,
     detach_core=False,
     loss_weighting_power=None,
-    use_performance_tail_weighting=False,  # --- ADDED: Flag to enable tail reweighting
-    gamma_fits=None,  # --- ADDED: Gamma parameters for each neuron
-    tail_quantile=0.95,  # --- ADDED: Quantile to define the tail
+    use_performance_tail_weighting=False,
+    gamma_fits=None,
+    tail_quantile=0.95,
+    use_mixup=False,
+    mixup_alpha=0.4,
+    use_cutmix=False,
+    cutmix_alpha=1.0,
     **kwargs,
 ):
     """
@@ -139,13 +182,11 @@ def standard_trainer(
     Args:
         model: model to be trained
         ...
-        use_performance_tail_weighting: If True, enables the performance-based tail reweighting.
-        gamma_fits: A NumPy array of shape (n_neurons, 2) with alpha and beta parameters for the Gamma fit of each neuron.
-        tail_quantile: The quantile (0 to 1) above which a response is considered to be in the tail.
+        use_cutmix: If True, enables CutMix data augmentation.
+        cutmix_alpha: The alpha parameter for the Beta distribution used in CutMix.
         ...
     """
 
-    # --- CORRECTED: Initialize neuron_performance safely ---
     if use_performance_tail_weighting:
         if gamma_fits is None:
             raise ValueError(
@@ -157,18 +198,84 @@ def standard_trainer(
         neuron_performance = None
 
     def full_objective(model, dataloader, data_key, *args, **kwargs):
+
+        # print(args[0][0].shape) # This is input frames (1, 36, 64)
+        # print(len(args[1][0]))  # This is output response (7776)
+
         nonlocal neuron_performance  # --- Allow modification of the outer scope variable
         loss_scale = (
             np.sqrt(len(dataloader[data_key].dataset) / args[0].shape[0])
             if scale_loss
             else 1.0
         )
-        unweighted_loss = criterion(
-            model(args[0].to(device), data_key=data_key, **kwargs),
-            args[1].to(device),
-        )
 
-        responses = args[1].to(device).detach()
+        inputs, targets = args[0].to(device), args[1].to(device)
+
+        # --- Apply augmentation ---
+        r = np.random.rand(1)
+        if use_mixup and use_cutmix:
+            if r < 0.5:
+                # Apply Mixup
+                inputs, targets_a, targets_b, lam = mixup_data(
+                    inputs, targets, mixup_alpha, device
+                )
+                outputs = model(inputs, data_key=data_key, **kwargs)
+                unweighted_loss = mixup_criterion(
+                    criterion, outputs, targets_a, targets_b, lam
+                )
+            else:
+                # Apply CutMix
+                lam = np.random.beta(cutmix_alpha, cutmix_alpha)
+                rand_index = torch.randperm(inputs.size()[0]).to(device)
+                targets_a = targets
+                targets_b = targets[rand_index]
+                bbx1, bby1, bbx2, bby2 = rand_bbox(inputs.size(), lam)
+                inputs[:, :, bbx1:bbx2, bby1:bby2] = inputs[
+                    rand_index, :, bbx1:bbx2, bby1:bby2
+                ]
+                lam = 1 - (
+                    (bbx2 - bbx1)
+                    * (bby2 - bby1)
+                    / (inputs.size()[-1] * inputs.size()[-2])
+                )
+
+                outputs = model(inputs, data_key=data_key, **kwargs)
+                unweighted_loss = mixup_criterion(
+                    criterion, outputs, targets_a, targets_b, lam
+                )
+
+        elif use_mixup:
+            inputs, targets_a, targets_b, lam = mixup_data(
+                inputs, targets, mixup_alpha, device
+            )
+            outputs = model(inputs, data_key=data_key, **kwargs)
+            unweighted_loss = mixup_criterion(
+                criterion, outputs, targets_a, targets_b, lam
+            )
+
+        elif use_cutmix:
+            lam = np.random.beta(cutmix_alpha, cutmix_alpha)
+            rand_index = torch.randperm(inputs.size()[0]).to(device)
+            targets_a = targets
+            targets_b = targets[rand_index]
+            bbx1, bby1, bbx2, bby2 = rand_bbox(inputs.size(), lam)
+            inputs[:, :, bbx1:bbx2, bby1:bby2] = inputs[
+                rand_index, :, bbx1:bbx2, bby1:bby2
+            ]
+            lam = 1 - (
+                (bbx2 - bbx1) * (bby2 - bby1) / (inputs.size()[-1] * inputs.size()[-2])
+            )
+
+            outputs = model(inputs, data_key=data_key, **kwargs)
+            unweighted_loss = mixup_criterion(
+                criterion, outputs, targets_a, targets_b, lam
+            )
+
+        else:
+            outputs = model(inputs, data_key=data_key, **kwargs)
+            unweighted_loss = criterion(outputs, targets)
+
+        responses = targets.detach()
 
         if use_performance_tail_weighting:
             if gamma_fits is None:
@@ -278,6 +385,10 @@ def standard_trainer(
             "loss_weighting_power": loss_weighting_power,
             "use_performance_tail_weighting": use_performance_tail_weighting,
             "tail_quantile": tail_quantile,
+            "use_mixup": use_mixup,
+            "mixup_alpha": mixup_alpha,
+            "use_cutmix": use_cutmix,
+            "cutmix_alpha": cutmix_alpha,
         },
         mode="online" if use_wandb else "disabled",
     )
