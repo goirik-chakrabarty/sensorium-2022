@@ -1,0 +1,58 @@
+# -- DATASET CONFIGURATION
+dataset_config:
+  paths:
+    - "data/static26872-17-20-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    - "data/static21067-10-18-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    - "data/static22846-10-16-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    - "data/static23343-5-17-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    - "data/static23656-14-22-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    - "data/static23964-4-22-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    - "data/static27204-5-13-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+  normalize: True
+  include_behavior: False
+  include_eye_position: False
+  batch_size: 128
+  scale: 0.25
+
+# -- MODEL CONFIGURATION
+model_config:
+  pad_input: False
+  stack: -1
+  layers: 4
+  input_kern: 9
+  gamma_input: 6.3831
+  gamma_readout: 0.0076
+  hidden_kern: 7
+  hidden_channels: 64
+  depth_separable: True
+  grid_mean_predictor:
+    type: "cortex"
+    input_dimensions: 2
+    hidden_layers: 1
+    hidden_features: 30
+    final_tanh: True
+  init_sigma: 0.1
+  init_mu_range: 0.3
+  gauss_type: "full"
+  shifter: False
+
+# -- TRAINER CONFIGURATION
+trainer_config:
+  max_iter: 200
+  verbose: False
+  lr_decay_steps: 4
+  avg_loss: False
+  lr_init: 0.009
+  use_wandb: True
+  use_tqdm: True
+  loss_weighting_power": 0
+  use_performance_tail_weighting: False
+  gamma_fits_path: "gamma_fits.npy" # Path to the gamma fits file
+  tail_quantile: 0.1
+  use_mixup: False
+  mixup_alpha: 0.4
+  use_cutmix: False
+  cutmix_alpha: 2
+
+# -- SAVING PATH
+model_save_path: "./model_tutorial/model_checkpoints/sensorium_sota_model_baseline.pth"

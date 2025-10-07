@@ -1,3 +1,4 @@
+import argparse  # To read command line arguments
 import os
 import warnings
 
@@ -6,62 +7,50 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
+import yaml  # Import the YAML package
 
 warnings.filterwarnings("ignore")
 
 from nnfabrik.builder import get_data, get_model, get_trainer
 
+# --- 1. SET UP ARGUMENT PARSER ---
+# This will allow you to pass the config file path from the command line
+parser = argparse.ArgumentParser(description="Train a Sensorium model.")
+parser.add_argument(
+    "--config", type=str, required=True, help="Path to the config.yaml file."
+)
+args = parser.parse_args()
+
+
+# --- 2. LOAD CONFIGURATION FROM YAML ---
+with open(args.config, "r") as f:
+    config = yaml.safe_load(f)
+
+# Now, get your configurations from the loaded 'config' dictionary
+dataset_config = config["dataset_config"]
+model_config = config["model_config"]
+trainer_config = config["trainer_config"]
+model_save_path = config["model_save_path"]
+
+
+# --- THE REST OF YOUR SCRIPT REMAINS MOSTLY THE SAME ---
+
 # loading the SENSORIUM dataset
-filenames = [
-    "data/static26872-17-20-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip",
-]
+# The path is now taken from your config file
+filenames = dataset_config["paths"]
 
-# basepath = "./data/"
-# filenames = [
-#     os.path.join(basepath, file) for file in os.listdir(basepath) if ".zip" in file
-# ]
-
-
+# The dataset function remains the same
 dataset_fn = "sensorium.datasets.static_loaders"
-dataset_config = {
-    "paths": filenames,
-    "normalize": True,
-    "include_behavior": False,
-    "include_eye_position": False,
-    "batch_size": 128,
-    "scale": 0.25,
-}
 
+# Dataloaders are created using the dataset_config from your file
 dataloaders = get_data(dataset_fn, dataset_config)
 
 # Instantiate State of the Art Model
 model_fn = "sensorium.models.stacked_core_full_gauss_readout"
-model_config = {
-    "pad_input": False,
-    "stack": -1,
-    "layers": 4,
-    "input_kern": 9,
-    "gamma_input": 6.3831,
-    "gamma_readout": 0.0076,
-    "hidden_kern": 7,
-    "hidden_channels": 64,
-    "depth_separable": True,
-    "grid_mean_predictor": {
-        "type": "cortex",
-        "input_dimensions": 2,
-        "hidden_layers": 1,
-        "hidden_features": 30,
-        "final_tanh": True,
-    },
-    "init_sigma": 0.1,
-    "init_mu_range": 0.3,
-    "gauss_type": "full",
-    "shifter": False,
-}
 
 model = get_model(
     model_fn=model_fn,
-    model_config=model_config,
+    model_config=model_config,  # Using model_config from your file
     dataloaders=dataloaders,
     seed=42,
 )
@@ -69,23 +58,10 @@ model = get_model(
 # Configure Trainer
 trainer_fn = "sensorium.training.standard_trainer"
 
-trainer_config = {
-    "max_iter": 200,
-    "verbose": False,
-    "lr_decay_steps": 4,
-    "avg_loss": False,
-    "lr_init": 0.009,
-    "use_wandb": True,
-    "use_tqdm": True,
-    "loss_weighting_power": 0,
-    "use_performance_tail_weighting": False,
-    "gamma_fits": np.load("gamma_fits.npy"),
-    "tail_quantile": 0.1,
-    "use_mixup": False,
-    "mixup_alpha": 0.4,
-    "use_cutmix": True,
-    "cutmix_alpha": 2,
-}
+# Load gamma_fits from the path specified in the config
+trainer_config["gamma_fits"] = np.load(trainer_config["gamma_fits_path"])
+del trainer_config["gamma_fits_path"]  # Remove the path from the config
+
 
 trainer = get_trainer(trainer_fn=trainer_fn, trainer_config=trainer_config)
 
@@ -94,7 +70,9 @@ validation_score, trainer_output, state_dict = trainer(model, dataloaders, seed=
 print(validation_score)
 
 # Save model checkpoints after training is complete
+# The save path is now also from your config file
 torch.save(
     model.state_dict(),
-    "./model_tutorial/model_checkpoints/sensorium_sota_model_superloss.pth",
+    model_save_path,
 )
+print(f"Model saved to {model_save_path}")
