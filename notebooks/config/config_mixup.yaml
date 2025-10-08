@@ -1,13 +1,21 @@
 # -- DATASET CONFIGURATION
 dataset_config:
-  paths:
+  train_paths:
     - "data/static26872-17-20-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
-    - "data/static21067-10-18-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
-    - "data/static22846-10-16-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
-    - "data/static23343-5-17-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
-    - "data/static23656-14-22-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static21067-10-18-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static22846-10-16-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static23343-5-17-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static23656-14-22-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static23964-4-22-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static27204-5-13-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+  test_paths:
+    # - "data/static26872-17-20-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static21067-10-18-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static22846-10-16-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static23343-5-17-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static23656-14-22-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
     - "data/static23964-4-22-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
-    - "data/static27204-5-13-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static27204-5-13-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
   normalize: True
   include_behavior: False
   include_eye_position: False
@@ -38,7 +46,7 @@ model_config:
 
 # -- TRAINER CONFIGURATION
 trainer_config:
-  max_iter: 200
+  max_iter: 150
   verbose: False
   lr_decay_steps: 4
   avg_loss: False
@@ -53,6 +61,13 @@ trainer_config:
   mixup_alpha: 0.4
   use_cutmix: False
   cutmix_alpha: 2
+
+# -- TRANSFER LEARNING (TESTING) CONFIGURATION
+transfer_trainer_config:
+  max_iter: 50  # Fewer epochs needed for fine-tuning
+  verbose: True
+  lr_init: 0.005 # May want a different learning rate
+  # ... other trainer settings can be adjusted for transfer learning
 
 # -- SAVING PATH
 model_save_path: "./model_tutorial/model_checkpoints/sensorium_sota_model_mixup.pth"
