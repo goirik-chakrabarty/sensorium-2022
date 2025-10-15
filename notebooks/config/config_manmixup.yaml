@@ -1,16 +1,16 @@
 # -- SAVING PATH
-model_save_path: "./model_tutorial/model_checkpoints/sensorium_mixup_all.pth"
+model_save_path: "./model_tutorial/model_checkpoints/sensorium_manifold_mixup_all.pth"
 
 # -- DATASET CONFIGURATION
 dataset_config:
   train_paths:
     - "data/static26872-17-20-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
-    - "data/static21067-10-18-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
-    - "data/static22846-10-16-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
-    - "data/static23343-5-17-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
-    - "data/static23656-14-22-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
-    - "data/static23964-4-22-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
-    - "data/static27204-5-13-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static21067-10-18-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static22846-10-16-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static23343-5-17-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static23656-14-22-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static23964-4-22-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
+    # - "data/static27204-5-13-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
   test_paths:
     # - "data/static26872-17-20-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
     # - "data/static21067-10-18-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
@@ -20,7 +20,7 @@ dataset_config:
     # - "data/static23964-4-22-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
     # - "data/static27204-5-13-GrayImageNet-94c6ff995dac583098847cfecd43e7b6.zip"
     # - "data/static25316-3-13-GrayGaborImageNet-7bed7f7379d99271be5d144e5e59a8e7_plus_0.zip"
-    - "data/static25341-4-18-GrayImageNet-7bed7f7379d99271be5d144e5e59a8e7.zip"
+    # - "data/static25341-4-18-GrayImageNet-7bed7f7379d99271be5d144e5e59a8e7.zip"
   normalize: True
   include_behavior: False
   include_eye_position: False
@@ -52,21 +52,18 @@ model_config:
 
 # -- TRAINER CONFIGURATION
 trainer_config:
-  max_iter: 150
+  max_iter: 200
   verbose: False
   lr_decay_steps: 4
   avg_loss: False
   lr_init: 0.009
   use_wandb: True
   use_tqdm: True
-  loss_weighting_power": 0
-  use_performance_tail_weighting: False
-  gamma_fits_path: "gamma_fits.npy" # Path to the gamma fits file
-  tail_quantile: 0.1
-  use_mixup: True
-  mixup_alpha: 0.4
+  use_mixup: False
   use_cutmix: False
-  cutmix_alpha: 2
+  use_manifold_mixup: True
+  manifold_mixup_alpha: 0.4
+  manifold_mixup_layer_pool: [1, 2, 3, 4] # Layer indices to choose from for mixup
 
 # -- TRANSFER LEARNING (TESTING) CONFIGURATION
 transfer_trainer_config:

@@ -1,5 +1,6 @@
 import math
 import os
+import random
 import warnings
 from functools import partial
 
@@ -61,8 +62,6 @@ class PoissonLoss(nn.Module):
 
         np.save(f"./metrics_save/loss/{ITER}", loss.sum(dim=0).cpu().detach().numpy())
 
-        # if True:# self.elementwise:
-        #     return loss.sum(dim=0) # dim = 1 or 0 # SWEEP
         if not self.per_neuron:
             loss = loss.mean() if self.avg else loss.sum()
         else:
@@ -75,7 +74,6 @@ class PoissonLoss(nn.Module):
 
 
 class SuperLoss(nn.Module):
-
     def __init__(self, loss_fn=None, C=10, lam=0.1):
         super(SuperLoss, self).__init__()
         self.lam = lam
@@ -175,16 +173,52 @@ def standard_trainer(
     mixup_alpha=0.4,
     use_cutmix=False,
     cutmix_alpha=1.0,
+    use_manifold_mixup=False,
+    manifold_mixup_alpha=0.4,
+    manifold_mixup_layer_pool=None,
     **kwargs,
 ):
     """
 
     Args:
         model: model to be trained
-        ...
-        use_cutmix: If True, enables CutMix data augmentation.
-        cutmix_alpha: The alpha parameter for the Beta distribution used in CutMix.
-        ...
+        dataloaders: dataloaders
+        seed: random seed
+        use_wandb: whether to use weights and biases
+        use_tqdm: whether to use tqdm
+        avg_loss: whether to average the loss
+        scale_loss: whether to scale the loss
+        loss_function: loss function to use
+        stop_function: function to use for early stopping
+        loss_accum_batch_n: number of batches to accumulate loss over
+        device: device to use
+        verbose: whether to print progress
+        interval: interval for early stopping
+        patience: patience for early stopping
+        epoch: starting epoch
+        lr_init: initial learning rate
+        max_iter: maximum number of iterations
+        maximize: whether to maximize the score
+        tolerance: tolerance for early stopping
+        restore_best: whether to restore the best model
+        lr_decay_steps: number of learning rate decay steps
+        lr_decay_factor: learning rate decay factor
+        min_lr: minimum learning rate
+        cb: callback function
+        track_training: whether to track training
+        detach_core: whether to detach the core
+        loss_weighting_power: power to use for loss weighting
+        use_performance_tail_weighting: whether to use performance tail weighting
+        gamma_fits: gamma fits for performance tail weighting
+        tail_quantile: quantile to use for performance tail weighting
+        use_mixup: whether to use mixup
+        mixup_alpha: alpha for mixup
+        use_cutmix: whether to use cutmix
+        cutmix_alpha: alpha for cutmix
+        use_manifold_mixup: If True, enables Manifold Mixup data augmentation.
+        manifold_mix_alpha: The alpha parameter for the Beta distribution used in Manifold Mixup.
+        manifold_mix_layer_pool: A list of layer indices from which to randomly select for applying Manifold Mixup.
+        **kwargs:
     """
 
     if use_performance_tail_weighting:
@@ -199,10 +233,7 @@ def standard_trainer(
 
     def full_objective(model, dataloader, data_key, *args, **kwargs):
 
-        # print(args[0][0].shape) # This is input frames (1, 36, 64)
-        # print(len(args[1][0]))  # This is output response (7776)
-
-        nonlocal neuron_performance  # --- Allow modification of the outer scope variable
+        nonlocal neuron_performance
         loss_scale = (
             np.sqrt(len(dataloader[data_key].dataset) / args[0].shape[0])
             if scale_loss
@@ -211,11 +242,9 @@ def standard_trainer(
 
         inputs, targets = args[0].to(device), args[1].to(device)
 
-        # --- Apply augmentation ---
         r = np.random.rand(1)
         if use_mixup and use_cutmix:
             if r < 0.5:
-                # Apply Mixup
                 inputs, targets_a, targets_b, lam = mixup_data(
                     inputs, targets, mixup_alpha, device
                 )
@@ -224,7 +253,6 @@ def standard_trainer(
                     criterion, outputs, targets_a, targets_b, lam
                 )
             else:
-                # Apply CutMix
                 lam = np.random.beta(cutmix_alpha, cutmix_alpha)
                 rand_index = torch.randperm(inputs.size()[0]).to(device)
                 targets_a = targets
@@ -243,7 +271,6 @@ def standard_trainer(
                 unweighted_loss = mixup_criterion(
                     criterion, outputs, targets_a, targets_b, lam
                 )
-
         elif use_mixup:
             inputs, targets_a, targets_b, lam = mixup_data(
                 inputs, targets, mixup_alpha, device
@@ -252,7 +279,6 @@ def standard_trainer(
             unweighted_loss = mixup_criterion(
                 criterion, outputs, targets_a, targets_b, lam
             )
-
         elif use_cutmix:
             lam = np.random.beta(cutmix_alpha, cutmix_alpha)
             rand_index = torch.randperm(inputs.size()[0]).to(device)
@@ -270,7 +296,32 @@ def standard_trainer(
             unweighted_loss = mixup_criterion(
                 criterion, outputs, targets_a, targets_b, lam
             )
+        elif use_manifold_mixup:
+            lam = np.random.beta(manifold_mixup_alpha, manifold_mixup_alpha)
+            rand_index = torch.randperm(inputs.size()[0]).to(device)
+            targets_a = targets
+            targets_b = targets[rand_index]
 
+            layer_to_mix = random.choice(manifold_mixup_layer_pool)
+
+            pre_mix_model = nn.Sequential(
+                *list(model.core.features.children())[:layer_to_mix]
+            )
+            post_mix_model = nn.Sequential(
+                *list(model.core.features.children())[layer_to_mix:]
+            )
+
+            h1 = pre_mix_model(inputs)
+            h2 = pre_mix_model(inputs[rand_index])
+
+            mixed_h = lam * h1 + (1 - lam) * h2
+
+            core_output = post_mix_model(mixed_h)
+            outputs = model.readout(core_output, data_key=data_key)
+
+            unweighted_loss = mixup_criterion(
+                criterion, outputs, targets_a, targets_b, lam
+            )
         else:
             outputs = model(inputs, data_key=data_key, **kwargs)
             unweighted_loss = criterion(outputs, targets)
@@ -284,7 +335,6 @@ def standard_trainer(
                 )
 
             with torch.no_grad():
-                # --- Calculate tail thresholds using the Gamma distribution ---
                 alphas = torch.tensor(
                     gamma_fits[:, 0], device=device, dtype=torch.float32
                 )
@@ -292,7 +342,6 @@ def standard_trainer(
                     gamma_fits[:, 1], device=device, dtype=torch.float32
                 )
 
-                # Using scipy's ppf function for the inverse CDF
                 tail_thresholds = torch.tensor(
                     gamma_dist.ppf(
                         tail_quantile,
@@ -303,13 +352,10 @@ def standard_trainer(
                     dtype=torch.float32,
                 )
 
-                # --- Define tails and performance weights ---
                 is_in_tail = responses > tail_thresholds
-                # Define the two possible weighting values
                 weight_if_high_performance = 1.0 / (neuron_performance + 1e-8)
                 weight_if_low_performance = torch.full_like(neuron_performance, 1000.0)
 
-                # Use torch.where to choose between the two weight tensors based on the condition
                 performance_weights = torch.where(
                     neuron_performance >= 0.001,
                     weight_if_high_performance,
@@ -341,8 +387,6 @@ def standard_trainer(
                 )
                 print(f"Average correlation epoch {ITER//35} : {arr.mean()}")
                 print(f"Average correlation epoch {ITER//35} : {arr[6477]}")
-                # print(f"Average correlation epoch {ITER//35} : {arr[6059]}")
-                # print(f"Average correlation epoch {ITER//35} : {arr[6146]}")
                 print(f"Average correlation epoch {ITER//35} : {arr[6151]}")
 
         elif loss_weighting_power is not None and loss_weighting_power > 0:
@@ -389,6 +433,9 @@ def standard_trainer(
             "mixup_alpha": mixup_alpha,
             "use_cutmix": use_cutmix,
             "cutmix_alpha": cutmix_alpha,
+            "use_manifold_mixup": use_manifold_mixup,
+            "manifold_mixup_alpha": manifold_mixup_alpha,
+            "manifold_mixup_layer_pool": manifold_mixup_layer_pool,
         },
         mode="online" if use_wandb else "disabled",
     )
@@ -478,10 +525,11 @@ def standard_trainer(
             as_dict=False,
             per_neuron=True,
         )
-        # --- ADDED: Update neuron_performance for the next epoch's weighting ---
-        neuron_performance = torch.tensor(
-            validation_correlation, device=device, dtype=torch.float32
-        )
+
+        if use_performance_tail_weighting:
+            neuron_performance = torch.tensor(
+                validation_correlation, device=device, dtype=torch.float32
+            )
 
         save_dir = "./metrics_save/corr"
         save_path = os.path.join(save_dir, f"{epoch}.npy")

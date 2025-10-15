@@ -1,14 +1,13 @@
-from torch import nn
-
-from nnfabrik.utility.nn_helpers import set_random_seed, get_dims_for_loader_dict
-from neuralpredictors.utils import get_module_output
+from neuralpredictors.layers.cores import (
+    RotationEquivariant2dCore,
+    SE2dCore,
+    Stacked2dCore,
+)
 from neuralpredictors.layers.encoders import FiringRateEncoder
 from neuralpredictors.layers.shifters import MLPShifter, StaticAffine2dShifter
-from neuralpredictors.layers.cores import (
-    Stacked2dCore,
-    SE2dCore,
-    RotationEquivariant2dCore,
-)
+from neuralpredictors.utils import get_module_output
+from nnfabrik.utility.nn_helpers import get_dims_for_loader_dict, set_random_seed
+from torch import nn
 
 from .readouts import MultipleFullGaussian2d
 from .utility import prepare_grid
@@ -39,6 +38,7 @@ def stacked_core_full_gauss_readout(
     stack=None,
     depth_separable=False,
     linear=False,
+    positive=False,  # <-- ADDED THIS ARGUMENT
     gauss_type="full",
     grid_mean_predictor=None,
     attention_conv=False,
@@ -59,6 +59,7 @@ def stacked_core_full_gauss_readout(
         dataloaders: a dictionary of dataloaders, one loader per session
             in the format {'data_key': dataloader object, .. }
         seed: random seed
+        positive: whether to use a softplus activation on the readout
         grid_mean_predictor: if not None, needs to be a dictionary of the form
             {
             'type': 'cortex',
@@ -97,7 +98,9 @@ def stacked_core_full_gauss_readout(
     )
 
     set_random_seed(seed)
-    grid_mean_predictor, grid_mean_predictor_type, source_grids = prepare_grid(grid_mean_predictor, dataloaders)
+    grid_mean_predictor, grid_mean_predictor_type, source_grids = prepare_grid(
+        grid_mean_predictor, dataloaders
+    )
 
     core = Stacked2dCore(
         input_channels=core_input_channels,
@@ -140,6 +143,7 @@ def stacked_core_full_gauss_readout(
         grid_mean_predictor=grid_mean_predictor,
         grid_mean_predictor_type=grid_mean_predictor_type,
         source_grids=source_grids,
+        positive=positive,
     )
 
     if shifter is True:
